@@ -1,13 +1,16 @@
 package main
 
 import (
+	"Df_while_go/commands"
 	"Df_while_go/database"
 	"Df_while_go/phandler"
 	"Df_while_go/sessions"
 	"fmt"
 	"github.com/df-mc/dragonfly/server"
+	"github.com/df-mc/dragonfly/server/cmd"
 	"github.com/df-mc/dragonfly/server/player"
 	"github.com/df-mc/dragonfly/server/player/chat"
+	"github.com/go-gl/mathgl/mgl64"
 	"github.com/pelletier/go-toml"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
@@ -18,7 +21,6 @@ func main() {
 	log := logrus.New()
 	log.Formatter = &logrus.TextFormatter{ForceColors: true}
 	log.Level = logrus.DebugLevel
-	database.Main()
 	chat.Global.Subscribe(chat.StdoutSubscriber{})
 
 	config, err := readConfig()
@@ -26,16 +28,21 @@ func main() {
 		log.Fatalln(err)
 	}
 	srv := server.New(&config, log)
+	database.Srv = srv
+	database.Main()
 	srv.CloseOnProgramEnd()
 	if err := srv.Start(); err != nil {
 		log.Fatalln(err)
 	}
+	world := srv.World()
+	world.Handle(phandler.AddToWorldHandler(world))
+	cmd.Register(cmd.New("gamemode", "Set your gamemode", []string{"gm"}, commands.Gamemode{}))
 	for srv.Accept(func(p *player.Player) {
 		p.Handle(phandler.AddToHandler(p))
-		s := sessions.CreateSession(p)
-		s.UpdateScoreboard()
-		s.SendLobbyItems()
-
+		sessions.CreateSession(p)
+		go sessions.GetSession(p.Name()).Load()
+		p.ShowCoordinates()
+		p.Teleport(mgl64.Vec3{-60, 124, 93})
 	}) {
 	}
 }
