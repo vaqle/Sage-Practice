@@ -7,10 +7,8 @@ import (
 var sessions = make(map[string]*Session)
 
 // CreateSession /**
-func CreateSession(player *player.Player) *Session {
+func CreateSession(player *player.Player) {
 	sessions[player.Name()] = &Session{player: player}
-	go sessions[player.Name()].load()
-	return sessions[player.Name()]
 }
 
 // GetSession /**
