@@ -3,7 +3,7 @@ module Df_while_go
 go 1.18
 
 require (
-	github.com/df-mc/dragonfly v0.6.3-0.20220510102721-c4be8f0ad263 // indirect
+	github.com/df-mc/dragonfly v0.6.3-0.20220511200252-4f494dd67380 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/pelletier/go-toml v1.9.4
 	github.com/sirupsen/logrus v1.8.1
