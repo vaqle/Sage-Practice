@@ -14,6 +14,7 @@ type Session struct {
 	player *player.Player
 	kills  int
 	deaths int
+	rankID int
 }
 
 func getDatabase() *sql.DB {
@@ -21,7 +22,7 @@ func getDatabase() *sql.DB {
 	return db
 }
 
-func (s *Session) load() {
+func (s *Session) Load() {
 	d := getDatabase()
 	query, err := d.Query("SELECT * FROM sessionPlayers WHERE name = ?", s.player.Name())
 	if err != nil {
@@ -39,18 +40,25 @@ func (s *Session) load() {
 	}
 	//set the player's kills and deaths
 	fmt.Printf("Loaded %s's session\n", s.player.Name())
+	s.init()
 }
 
 func (s Session) register() {
 	d := getDatabase()
-	d.Query("INSERT INTO sessionPlayers (name, kills, deaths) VALUES (?, ?, ?)", s.player.Name(), 0, 0)
+	_, _ = d.Query("INSERT INTO sessionPlayers (name, kills, deaths) VALUES (?, ?, ?)", s.player.Name(), 0, 0)
 	fmt.Printf("Registered %s", s.player.Name())
+	s.init()
+}
+
+func (s *Session) init() {
+	s.SendLobbyItems()
+	s.UpdateScoreboard()
 }
 
 func (s Session) Save() {
 
 	d := getDatabase()
-	d.Query("UPDATE sessionPlayers SET kills = ?, deaths = ? WHERE name = ?", s.kills, s.deaths, s.player.Name())
+	_, _ = d.Query("UPDATE sessionPlayers SET kills = ?, deaths = ? WHERE name = ?", s.kills, s.deaths, s.player.Name())
 	fmt.Printf("Saved session for %s", s.player.Name())
 }
 
@@ -59,24 +67,21 @@ func (s *Session) AddKills() {
 }
 
 func (s *Session) UpdateScoreboard() {
-	sb := scoreboard.New("§r§6§lSage Practice")
+	sb := scoreboard.New("§6§lSage")
+	sb.RemovePadding()
 	ticker := time.NewTicker(time.Second * 2)
 	for _ = range ticker.C {
 		if s.player == nil {
 			ticker.Stop()
 			return
 		}
-		lines := []string{
-			"",
-			"§r§6Kills: §r§f" + fmt.Sprintf("%d", s.kills),
-			"§r§6Deaths: §r§f" + fmt.Sprintf("%d", s.deaths),
-			"",
-		}
-		i := 0
-		for _, line := range lines {
-			sb.Set(i, line)
-			i++
-		}
+
+		sb.Set(0, "\uE000")
+		sb.Set(1, " §r§fOnline: §6"+database.Players.String())
+		sb.Set(2, " §r§fMatches: §6"+"0")
+		sb.Set(3, "\n")
+		sb.Set(4, " §r§6sagehcf.club")
+		sb.Set(5, "§e\uE000")
 		s.player.SendScoreboard(sb)
 	}
 }
@@ -86,6 +91,10 @@ func (s *Session) SendLobbyItems() {
 	Rduels := item.NewStack(item.Sword{
 		Tier: item.ToolTierIron}, 1).WithCustomName("§r§6§lRanked Duels")
 	_ = p.Inventory().SetItem(0, Rduels)
+}
+
+func (s Session) getRankId() int {
+	return s.rankID
 }
 
 func (s Session) GetKills() string {
