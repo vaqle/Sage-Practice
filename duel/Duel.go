@@ -75,15 +75,15 @@ func (d *Duel) countDown() {
 	p2 := d.getDuelPlayers()[1]
 	ticker := time.NewTicker(time.Second * 1)
 	for range ticker.C {
-		i := &cd
+		var i = &cd
 		*i--
 		if *i == 0 {
 			phase = 1
 			d.start()
 			ticker.Stop()
 		}
-		switch i {
-		case i:
+		switch *i {
+		case 1:
 			p1.Message(fmt.Sprintf("%d", *i))
 			p2.Message(fmt.Sprintf("%d", *i))
 			break
@@ -92,21 +92,21 @@ func (d *Duel) countDown() {
 }
 
 func (d *Duel) start() {
-	fmt.Println("DUEL STARTED")
 	ticker := time.NewTicker(time.Second * 1)
 	for range ticker.C {
-		duration := &d.duration
-		*duration++
-		amount := len(d.getDuelPlayers())
-		if amount == 1 {
-			elements := duelPlayers[1:]
-			winner := elements[0]
-			loser := d.GetOpponet(winner)
-			winner.Message("You won the duel!")
-			d.end(winner, loser)
+		var duelTime = &d.duration
+		*duelTime++
+		if len(d.getDuelPlayers()) == 0 {
+			var p *player.Player = nil
+			elements := duelPlayers[0:]
+			for _, element := range elements {
+				p = element
+			}
+			loser := d.GetOpponet(p)
+			d.end(p, loser)
 		}
-		switch *duration {
-		case 60:
+		switch d.duration {
+		case 10, 9, 8, 7, 6, 5, 4:
 			fmt.Println("DUEL ENDED")
 			d.stop()
 			ticker.Stop()
