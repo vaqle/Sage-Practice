@@ -83,7 +83,7 @@ func (d *Duel) countDown() {
 			ticker.Stop()
 		}
 		switch *i {
-		case 1:
+		case 1, 2, 3, 4:
 			p1.Message(fmt.Sprintf("%d", *i))
 			p2.Message(fmt.Sprintf("%d", *i))
 			break
@@ -106,7 +106,7 @@ func (d *Duel) start() {
 			d.end(p, loser)
 		}
 		switch d.duration {
-		case 10, 9, 8, 7, 6, 5, 4:
+		case 60:
 			fmt.Println("DUEL ENDED")
 			d.stop()
 			ticker.Stop()
