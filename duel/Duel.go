@@ -64,10 +64,7 @@ func (d *Duel) tick() {
 		for {
 			if phase == 0 && cd == 10 {
 				d.countDown()
-				if cd == 0 {
-					d.start()
-					return
-				}
+				return
 			}
 		}
 	}()
