@@ -56,36 +56,34 @@ func (d *Duel) getUUID() string {
 	return d.UUID
 }
 
-var cd = 10
 var phase = 0
 
 func (d *Duel) tick() {
-	go func() {
-		for {
-			if phase == 0 && cd == 10 {
-				d.countDown()
-				return
-			}
-		}
-	}()
+	c := make(chan int, 1) //buffered channel
+	go d.countDown(c)
+	finished, _ := <-c
+	if finished == 0 && phase == 1 {
+		d.start()
+	}
 }
 
-func (d *Duel) countDown() {
+func (d *Duel) countDown(c chan int) {
 	p1 := d.getDuelPlayers()[0]
 	p2 := d.getDuelPlayers()[1]
 	ticker := time.NewTicker(time.Second * 1)
 	for range ticker.C {
-		var i = &cd
-		*i--
-		if *i == 0 {
+		var i = 10
+		i--
+		if i == 0 {
 			phase = 1
-			d.start()
+			c <- i
 			ticker.Stop()
+			close(c)
 		}
-		switch *i {
+		switch i {
 		case 1, 2, 3, 4:
-			p1.Message(fmt.Sprintf("%d", *i))
-			p2.Message(fmt.Sprintf("%d", *i))
+			p1.Message(fmt.Sprintf("%d", i))
+			p2.Message(fmt.Sprintf("%d", i))
 			break
 		}
 	}
