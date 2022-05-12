@@ -56,10 +56,10 @@ func (d *Duel) getUUID() string {
 	return d.UUID
 }
 
-var cd = 10
-var phase = 0
 var (
 	channel2 = make(chan int)
+	cd = 10
+	phase = 0
 )
 
 func (d *Duel) tick() {
