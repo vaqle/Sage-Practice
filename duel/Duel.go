@@ -3,10 +3,13 @@ package duel
 import (
 	"fmt"
 	"github.com/df-mc/dragonfly/server/player"
+	"sync"
 	"time"
 )
 
 var duelPlayers = make([]*player.Player, 1)
+
+var mutex sync.Mutex
 
 type Duel struct {
 	players  []*player.Player
@@ -59,15 +62,29 @@ func (d *Duel) getUUID() string {
 var phase = 0
 
 func (d *Duel) tick() {
-	c := make(chan int, 1) //buffered channel
-	go d.countDown(c)
-	finished, _ := <-c
-	if finished == 0 && phase == 1 {
-		d.start()
+	c1 := make(chan int, 1) //buffered channel
+	c2 := make(chan int, 1) //buffered channel
+	go d.countDown(c1)
+	for {
+		select {
+		case result1 := <-c1:
+			if result1 == 0 && phase == 1 {
+				d.start(c2)
+				fmt.Println("Duel started")
+				break
+			}
+		case result2 := <-c2:
+			if result2 == 60 {
+				fmt.Println("Duel ended")
+				d.stop()
+				break
+			}
+		}
 	}
 }
 
 func (d *Duel) countDown(c chan int) {
+
 	p1 := d.getDuelPlayers()[0]
 	p2 := d.getDuelPlayers()[1]
 	ticker := time.NewTicker(time.Second * 1)
@@ -79,6 +96,7 @@ func (d *Duel) countDown(c chan int) {
 			c <- i
 			ticker.Stop()
 			close(c)
+			return
 		}
 		switch i {
 		case 1, 2, 3, 4:
@@ -89,7 +107,7 @@ func (d *Duel) countDown(c chan int) {
 	}
 }
 
-func (d *Duel) start() {
+func (d *Duel) start(c chan int) {
 	ticker := time.NewTicker(time.Second * 1)
 	for range ticker.C {
 		var duelTime = &d.duration
@@ -105,8 +123,7 @@ func (d *Duel) start() {
 		}
 		switch d.duration {
 		case 60:
-			fmt.Println("DUEL ENDED")
-			d.stop()
+			c <- d.duration
 			ticker.Stop()
 			return
 		}
