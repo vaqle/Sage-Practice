@@ -3,13 +3,10 @@ package duel
 import (
 	"fmt"
 	"github.com/df-mc/dragonfly/server/player"
-	"sync"
 	"time"
 )
 
 var duelPlayers = make([]*player.Player, 1)
-
-var mutex sync.Mutex
 
 type Duel struct {
 	players  []*player.Player
@@ -59,59 +56,60 @@ func (d *Duel) getUUID() string {
 	return d.UUID
 }
 
+var cd = 10
 var phase = 0
+var (
+	channel2 = make(chan int)
+)
 
 func (d *Duel) tick() {
-	c1 := make(chan int, 1) //buffered channel
-	c2 := make(chan int, 1) //buffered channel
-	go d.countDown(c1)
-	for {
-		select {
-		case result1 := <-c1:
-			if result1 == 0 && phase == 1 {
-				d.start(c2)
-				fmt.Println("Duel started")
-				break
+	go func() {
+		for {
+			if phase == 0 && cd == 10 {
+				fmt.Println("Countdown started")
+				d.countDown()
 			}
-		case result2 := <-c2:
-			if result2 == 60 {
-				fmt.Println("Duel ended")
+			select {
+			case <-channel2:
+				phase = 1
 				d.stop()
+				fmt.Println("DUEL ENDED")
 				break
 			}
 		}
-	}
+	}()
 }
 
-func (d *Duel) countDown(c chan int) {
-
+func (d *Duel) countDown() {
 	p1 := d.getDuelPlayers()[0]
 	p2 := d.getDuelPlayers()[1]
 	ticker := time.NewTicker(time.Second * 1)
 	for range ticker.C {
-		var i = 10
-		i--
-		if i == 0 {
+		var i = &cd
+		*i--
+		fmt.Println(*i)
+		if *i == 0 {
+			d.start()
 			phase = 1
-			c <- i
+			fmt.Println("DUEL STARTED???")
 			ticker.Stop()
-			close(c)
-			return
 		}
-		switch i {
-		case 1, 2, 3, 4:
-			p1.Message(fmt.Sprintf("%d", i))
-			p2.Message(fmt.Sprintf("%d", i))
+		switch *i {
+		case 1, 2, 3, 4, 5:
+			p1.Message(fmt.Sprintf("%d", *i))
+			p2.Message(fmt.Sprintf("%d", *i))
 			break
 		}
 	}
 }
 
-func (d *Duel) start(c chan int) {
+func (d *Duel) start() {
+	fmt.Println("DUEL STARTED")
 	ticker := time.NewTicker(time.Second * 1)
 	for range ticker.C {
 		var duelTime = &d.duration
 		*duelTime++
+		fmt.Println(*duelTime)
 		if len(d.getDuelPlayers()) == 0 {
 			var p *player.Player = nil
 			elements := duelPlayers[0:]
@@ -123,7 +121,8 @@ func (d *Duel) start(c chan int) {
 		}
 		switch d.duration {
 		case 60:
-			c <- d.duration
+			channel2 <- 60
+			close(channel2)
 			ticker.Stop()
 			return
 		}
