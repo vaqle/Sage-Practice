@@ -58,8 +58,8 @@ func (d *Duel) getUUID() string {
 
 var (
 	channel2 = make(chan int)
-	cd = 10
-	phase = 0
+	cd       = 10
+	phase    = 0
 )
 
 func (d *Duel) tick() {
@@ -71,9 +71,7 @@ func (d *Duel) tick() {
 			}
 			select {
 			case <-channel2:
-				phase = 1
 				d.stop()
-				fmt.Println("DUEL ENDED")
 				break
 			}
 		}
@@ -119,12 +117,10 @@ func (d *Duel) start() {
 			loser := d.GetOpponet(p)
 			d.end(p, loser)
 		}
-		switch d.duration {
-		case 60:
-			channel2 <- 60
-			close(channel2)
+		if *duelTime == 30 {
+			fmt.Println("DUEL TIME IS UP")
+			d.stop()
 			ticker.Stop()
-			return
 		}
 	}
 }
