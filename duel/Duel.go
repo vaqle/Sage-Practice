@@ -3,6 +3,7 @@ package duel
 import (
 	"fmt"
 	"github.com/df-mc/dragonfly/server/player"
+	"golang.org/x/exp/slices"
 	"time"
 )
 
@@ -16,15 +17,10 @@ type Duel struct {
 }
 
 func (d *Duel) isAlive(player *player.Player) bool {
-	for _, p := range d.getDuelPlayers() {
-		if p.Name() == player.Name() {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(d.players, player)
 }
 
-func (d *Duel) getDuelPlayers() []*player.Player {
+func (d *Duel) GetDuelPlayers() []*player.Player {
 	return d.players
 }
 
@@ -32,7 +28,7 @@ func (d *Duel) addPlayer(player *player.Player) {
 	d.players = append(d.players, player)
 }
 
-func (d *Duel) getPlayers() []*player.Player {
+func (d *Duel) GetPlayers() []*player.Player {
 	return duelPlayers[0:1]
 }
 
@@ -79,8 +75,8 @@ func (d *Duel) tick() {
 }
 
 func (d *Duel) countDown() {
-	p1 := d.getDuelPlayers()[0]
-	p2 := d.getDuelPlayers()[1]
+	p1 := d.GetDuelPlayers()[0]
+	p2 := d.GetDuelPlayers()[1]
 	ticker := time.NewTicker(time.Second * 1)
 	for range ticker.C {
 		var i = &cd
@@ -107,17 +103,7 @@ func (d *Duel) start() {
 	for range ticker.C {
 		var duelTime = &d.duration
 		*duelTime++
-		fmt.Println(*duelTime)
-		if len(d.getDuelPlayers()) == 0 {
-			var p *player.Player = nil
-			elements := duelPlayers[0:]
-			for _, element := range elements {
-				p = element
-			}
-			loser := d.GetOpponet(p)
-			d.end(p, loser)
-		}
-		if *duelTime == 30 {
+		if *duelTime == 60 {
 			fmt.Println("DUEL TIME IS UP")
 			d.stop()
 			ticker.Stop()
@@ -126,7 +112,7 @@ func (d *Duel) start() {
 }
 
 func (d *Duel) GetOpponet(winner *player.Player) *player.Player {
-	for _, p := range d.getDuelPlayers() {
+	for _, p := range d.GetDuelPlayers() {
 		if p.Name() != winner.Name() {
 			return p
 		}
@@ -134,7 +120,7 @@ func (d *Duel) GetOpponet(winner *player.Player) *player.Player {
 	return nil
 }
 
-func (d *Duel) end(winner *player.Player, loser *player.Player) {
+func (d *Duel) End(winner *player.Player, loser *player.Player) {
 	winner.Message("You won the duel!")
 	loser.Message("You lost the duel!")
 	d.stop()
