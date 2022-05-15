@@ -1,6 +1,7 @@
 package duel
 
 import (
+	"fmt"
 	"github.com/df-mc/dragonfly/server/player"
 	"sync"
 )
@@ -27,8 +28,8 @@ func (m *Matches) unregister(d *Duel) {
 
 func GetMatch(p *player.Player) *Duel {
 	for _, d := range matches.mList {
-		for _, p2 := range d.getDuelPlayers() {
-			if len(d.getPlayers()) != 0 {
+		for _, p2 := range d.GetDuelPlayers() {
+			if len(d.GetPlayers()) != 0 {
 				if p2.Name() == p.Name() {
 					return d
 				}
@@ -45,11 +46,13 @@ func StartMatch(p1 *player.Player, p2 *player.Player) {
 	}
 	d.addPlayer(p1)
 	d.addPlayer(p2)
-	d.tick()
+	fmt.Println("Duel Struct started")
 	matches.register(d)
+	d.tick()
 
 }
 
 func (d *Duel) stop() {
+	fmt.Println("Duel stopped")
 	matches.unregister(d)
 }
